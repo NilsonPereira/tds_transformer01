@@ -1,0 +1,10 @@
+{
+    "attribute_list" : [
+        "labstatus02/nmdev/labstatus/var01",
+        "labstatus02/nmdev/labstatus/var02"
+        ],
+    "device_out" : [
+        "transformer01/nmdev/transformer"
+    ],
+    "param_file" : "transformer_parameters.json"
+}
