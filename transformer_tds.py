@@ -15,7 +15,7 @@ class nmdev(Device):
     attr_array = []
     for a in attrlist:
         n = a.split('/')[-1]
-        attr_float = attr_float + [f"{n}", f"{n}_offset", f"{n}_std", f"{n}_mean" ]
+        attr_float = attr_float + [f"{n}", f"{n}_offset", f"{n}_std", f"{n}_mean", f"{n}_range"]
         attr_array = attr_array + [f"{n}_outarray", f"{n}_timestamps"]
     attr_all = attr_all + attr_float + attr_array
 

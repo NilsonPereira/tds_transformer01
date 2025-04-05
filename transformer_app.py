@@ -17,20 +17,24 @@ class SENSOR():
         self.ch_timestamps = None
         self.ch_std = None
         self.ch_mean = None
+        self.ch_range = None
         self.offset = 0.0
         self.std = 0.0
         self.mean = 0.0
+        self.range = 0.0
         self.maxdim = 5000
         self.buf = np.array([], dtype='float')
         self.bufts = np.array([], dtype='float')
         self.outarray = np.array([], dtype='float')
         self.timestamps = np.array([], dtype='float')
         self.val = 0.0
+        self.rawval = 0.0
         self.ts = 0.0
         self.eve = None
     def new_val(self, e):
         try:
-            self.val = e.attr_value.value + self.offset
+            self.rawval = e.attr_value.value
+            self.val = self.rawval + self.offset
             self.ts = e.attr_value.time.tv_sec + (1e-6 * e.attr_value.time.tv_usec)
             self.ch_out.write(self.val)
             self.calcall()
@@ -44,11 +48,12 @@ class SENSOR():
             self.eve.set()
 
     def calcall(self):
-        self.buf = np.concatenate((self.buf, [self.val]))
+        self.buf = np.concatenate((self.buf, [self.rawval]))
         self.bufts = np.concatenate((self.bufts, [self.ts]))
         self.buf = self.buf[-self.maxdim:]
         self.bufts = self.bufts[-self.maxdim:]
         self.outarray = self.buf[self.bufts > (time.time() - np.abs(60*self.params['period']))]
+        self.outarray = np.add(self.outarray, self.offset)
         self.timestamps = self.bufts[self.bufts > (time.time() - np.abs(60*self.params['period']))]
         # if self.params['sma'] >= 2:
         #     window = int(np.round(self.params['sma']))
@@ -56,10 +61,12 @@ class SENSOR():
         #     self.outarray = np.convolve(self.outarray, weights, 'same')
         self.ch_outarray.write(self.outarray)
         self.ch_timestamps.write(self.timestamps)
-        self.std = 1000.0*np.std(self.outarray)
+        self.std = 2.6* (1000.0*np.std(self.outarray))
         self.mean = np.mean(self.outarray)
+        self.range = np.abs(np.max(self.outarray)-np.min(self.outarray))
         self.ch_std.write(self.std)
         self.ch_mean.write(self.mean)
+        self.ch_range.write(self.range)
             
 def main():
     ## load config file
@@ -112,6 +119,7 @@ def main():
         s.ch_timestamps = tango.AttributeProxy(f"{device_out[0]}/{s.name}_timestamps")
         s.ch_std = tango.AttributeProxy(f"{device_out[0]}/{s.name}_std")
         s.ch_mean = tango.AttributeProxy(f"{device_out[0]}/{s.name}_mean")
+        s.ch_range = tango.AttributeProxy(f"{device_out[0]}/{s.name}_range")
         s.ch_offset.subscribe_event(tango.EventType.CHANGE_EVENT, s.new_offset)
         s.ch_in = tango.AttributeProxy(s.source)
         s.ch_in.subscribe_event(tango.EventType.CHANGE_EVENT, s.new_val)
